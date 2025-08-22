@@ -352,6 +352,9 @@ def test_count_samples(sample_db, test_project, project_db):
 
 def test_current_project_manager(current_project_manager, test_project):
     """Test the current project manager functionality."""
+    # Clear any existing project state first
+    current_project_manager.clear_current_project()
+    
     # Initially no project is active
     assert not current_project_manager.is_project_active()
     assert current_project_manager.get_current_project_id() is None

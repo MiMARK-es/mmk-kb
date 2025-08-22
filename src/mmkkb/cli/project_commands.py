@@ -52,7 +52,7 @@ class ProjectCommandHandler(BaseCommandHandler):
         elif args.command == "use":
             return self._use_project(db_path, args.code)
         elif args.command == "current":
-            return self._show_current_project()
+            return self._show_current_project(db_path)
         elif args.command == "clear":
             return self._clear_current_project()
         return False
@@ -143,32 +143,38 @@ class ProjectCommandHandler(BaseCommandHandler):
     
     def _use_project(self, db_path: str, code: str) -> bool:
         """Set the current active project."""
-        from ..samples import current_project_manager
+        from ..samples import CurrentProjectManager
         
-        if current_project_manager.use_project(code):
+        # Create a project manager with the correct database path
+        project_manager = CurrentProjectManager(db_path)
+        
+        if project_manager.use_project(code):
             print(f"✅ Now using project: {code}")
             return True
         else:
             print(f"❌ Project with code '{code}' not found.")
             return False
     
-    def _show_current_project(self) -> bool:
+    def _show_current_project(self, db_path: str = None) -> bool:
         """Show the current active project."""
-        from ..samples import current_project_manager
+        from ..samples import CurrentProjectManager
         
-        if current_project_manager.is_project_active():
-            code = current_project_manager.get_current_project_code()
-            project_id = current_project_manager.get_current_project_id()
+        # Create a project manager with the correct database path
+        project_manager = CurrentProjectManager(db_path)
+        
+        if project_manager.is_project_active():
+            code = project_manager.get_current_project_code()
+            project_id = project_manager.get_current_project_id()
             
             # Get project details
-            db = ProjectDatabase()
+            db = ProjectDatabase(db_path)
             project = db.get_project_by_id(project_id)
             
             if project:
                 print(f"🎯 Current Project: {project.code} - {project.name}")
                 
                 # Show sample count
-                sample_db = SampleDatabase()
+                sample_db = SampleDatabase(db_path)
                 sample_count = sample_db.count_samples(project_id)
                 print(f"📊 Samples: {sample_count}")
             else:

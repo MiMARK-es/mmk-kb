@@ -3,6 +3,8 @@ Sample model and database operations for MMK Knowledge Base.
 Samples are linked to projects and contain patient/specimen data.
 """
 import sqlite3
+import json
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
@@ -286,8 +288,41 @@ class CurrentProjectManager:
             db_path: Path to database file. If None, uses current environment's database.
         """
         self.db_path = db_path or get_database_path()
-        self._current_project_id = None
-        self._current_project_code = None
+        self._current_project_file = os.path.join(os.path.dirname(self.db_path), '.current_project.json')
+        self._load_current_project()
+    
+    def _load_current_project(self):
+        """Load current project from persistent storage."""
+        try:
+            if os.path.exists(self._current_project_file):
+                with open(self._current_project_file, 'r') as f:
+                    data = json.load(f)
+                    # Only load if the database path matches
+                    if data.get('db_path') == self.db_path:
+                        self._current_project_id = data.get('project_id')
+                        self._current_project_code = data.get('project_code')
+                    else:
+                        self._current_project_id = None
+                        self._current_project_code = None
+            else:
+                self._current_project_id = None
+                self._current_project_code = None
+        except (json.JSONDecodeError, IOError):
+            self._current_project_id = None
+            self._current_project_code = None
+    
+    def _save_current_project(self):
+        """Save current project to persistent storage."""
+        try:
+            data = {
+                'db_path': self.db_path,
+                'project_id': self._current_project_id,
+                'project_code': self._current_project_code
+            }
+            with open(self._current_project_file, 'w') as f:
+                json.dump(data, f)
+        except IOError:
+            pass  # Silently fail if we can't write the file
     
     def use_project(self, project_code: str) -> bool:
         """
@@ -302,6 +337,7 @@ class CurrentProjectManager:
         if project:
             self._current_project_id = project.id
             self._current_project_code = project.code
+            self._save_current_project()
             return True
         return False
     
@@ -317,11 +353,11 @@ class CurrentProjectManager:
         """Clear the current project."""
         self._current_project_id = None
         self._current_project_code = None
+        self._save_current_project()
     
     def is_project_active(self) -> bool:
         """Check if a project is currently active."""
         return self._current_project_id is not None
-
 
 # Global instance for CLI usage
 current_project_manager = CurrentProjectManager()

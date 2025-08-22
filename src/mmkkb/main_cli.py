@@ -10,6 +10,7 @@ from .config import Environment, get_database_path, set_environment
 from .cli.project_commands import ProjectCommandHandler
 from .cli.sample_commands import SampleCommandHandler
 from .cli.environment_commands import EnvironmentCommandHandler, DatabaseCommandHandler
+from .cli.experiment_commands import ExperimentCommandHandler
 
 
 class CLIManager:
@@ -20,6 +21,7 @@ class CLIManager:
         self.handlers = [
             ProjectCommandHandler(),
             SampleCommandHandler(), 
+            ExperimentCommandHandler(),
             EnvironmentCommandHandler(),
             DatabaseCommandHandler(),
         ]
@@ -56,8 +58,30 @@ class CLIManager:
         # Find the handler that can process this command
         for handler in self.handlers:
             try:
-                if handler.handle_command(args, db_path):
-                    return True
+                # Check if this handler has the command first
+                if hasattr(handler, 'handle_command'):
+                    # Get the command name to check if this handler should handle it
+                    command_handled = False
+                    
+                    # Check ProjectCommandHandler for project commands
+                    if isinstance(handler, ProjectCommandHandler) and args.command in ['list', 'create', 'show', 'delete', 'use', 'current', 'clear']:
+                        command_handled = True
+                    # Check SampleCommandHandler for sample commands  
+                    elif isinstance(handler, SampleCommandHandler) and args.command in ['samples', 'sample-create', 'sample-show', 'sample-update', 'sample-delete']:
+                        command_handled = True
+                    # Check ExperimentCommandHandler for experiment commands
+                    elif isinstance(handler, ExperimentCommandHandler) and args.command in ['experiments', 'experiment-upload', 'csv-preview', 'experiment-show', 'biomarkers', 'biomarker-versions', 'biomarker-analysis', 'measurements-summary']:
+                        command_handled = True
+                    # Check EnvironmentCommandHandler for environment commands
+                    elif isinstance(handler, EnvironmentCommandHandler) and args.command in ['env', 'setenv']:
+                        command_handled = True
+                    # Check DatabaseCommandHandler for database commands
+                    elif isinstance(handler, DatabaseCommandHandler) and args.command in ['backup', 'restore', 'clean', 'clean-tests', 'copy', 'vacuum']:
+                        command_handled = True
+                    
+                    if command_handled:
+                        return handler.handle_command(args, db_path)
+                        
             except Exception as e:
                 print(f"❌ Error in {handler.__class__.__name__}: {e}")
                 return False

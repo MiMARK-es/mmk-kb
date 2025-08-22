@@ -63,7 +63,7 @@ class SampleCommandHandler(BaseCommandHandler):
     
     def _list_samples(self, db_path: str, project_code: str = None) -> bool:
         """List samples for current or specified project."""
-        from ..samples import current_project_manager
+        from ..samples import CurrentProjectManager
         
         sample_db = SampleDatabase(db_path)
         
@@ -76,13 +76,23 @@ class SampleCommandHandler(BaseCommandHandler):
                 return False
             project_id = project.id
             project_name = f"{project.code} - {project.name}"
-        elif current_project_manager.is_project_active():
-            # Use current project
-            project_id = current_project_manager.get_current_project_id()
-            project_name = current_project_manager.get_current_project_code()
         else:
-            print("❌ No project specified and no current project set. Use 'mmk-kb use <project_code>' first.")
-            return False
+            # Use current project with correct database path
+            current_project_manager = CurrentProjectManager(db_path)
+            if current_project_manager.is_project_active():
+                project_id = current_project_manager.get_current_project_id()
+                project_code = current_project_manager.get_current_project_code()
+                
+                # Get project details
+                project_db = ProjectDatabase(db_path)
+                project = project_db.get_project_by_id(project_id)
+                if project:
+                    project_name = f"{project.code} - {project.name}"
+                else:
+                    project_name = project_code
+            else:
+                print("❌ No project specified and no current project set. Use 'mmk-kb use <project_code>' first.")
+                return False
         
         samples = sample_db.list_samples(project_id)
         if not samples:

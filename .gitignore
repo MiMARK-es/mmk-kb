@@ -167,6 +167,9 @@ test_*.db
 .vscode/
 .idea/
 
+# Runtime state files
+.current_project.json
+
 # Backup directories
 backups/
 
