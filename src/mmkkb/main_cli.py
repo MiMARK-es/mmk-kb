@@ -67,7 +67,7 @@ class CLIManager:
                     if isinstance(handler, ProjectCommandHandler) and args.command in ['list', 'create', 'show', 'delete', 'use', 'current', 'clear']:
                         command_handled = True
                     # Check SampleCommandHandler for sample commands  
-                    elif isinstance(handler, SampleCommandHandler) and args.command in ['samples', 'sample-create', 'sample-show', 'sample-update', 'sample-delete']:
+                    elif isinstance(handler, SampleCommandHandler) and args.command in ['samples', 'sample-create', 'sample-show', 'sample-update', 'sample-delete', 'sample-upload', 'sample-preview', 'sample-export']:
                         command_handled = True
                     # Check ExperimentCommandHandler for experiment commands
                     elif isinstance(handler, ExperimentCommandHandler) and args.command in ['experiments', 'experiment-upload', 'csv-preview', 'experiment-show', 'biomarkers', 'biomarker-versions', 'biomarker-analysis', 'measurements-summary']:

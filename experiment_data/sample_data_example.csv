@@ -1,0 +1,11 @@
+code,age,bmi,dx,dx_origin,collection_center,processing_time
+CASE_001,45,25.3,1,biopsy,Hospital_A,120
+CASE_002,52,28.7,1,pathology,Hospital_B,90
+CASE_003,38,22.1,disease,surgical,Hospital_A,150
+CASE_004,60,30.5,case,biopsy,Hospital_C,100
+CASE_005,42,24.8,1,pathology,Hospital_A,130
+CTRL_001,48,26.1,0,screening,Hospital_B,85
+CTRL_002,55,29.2,control,screening,Hospital_A,95
+CTRL_003,41,23.7,benign,screening,Hospital_C,80
+CTRL_004,49,27.4,0,screening,Hospital_B,90
+CTRL_005,44,25.9,false,screening,Hospital_A,75

@@ -46,6 +46,25 @@ class SampleCommandHandler(BaseCommandHandler):
         sample_delete_parser = subparsers.add_parser("sample-delete", help="Delete a sample")
         sample_delete_parser.add_argument("code", help="Sample code")
         sample_delete_parser.add_argument("--project", help="Project code (optional, uses current if not specified)")
+
+        # Upload samples from CSV
+        sample_upload_parser = subparsers.add_parser("sample-upload", help="Upload samples from CSV file")
+        sample_upload_parser.add_argument("csv_path", help="Path to CSV file containing sample data")
+        sample_upload_parser.add_argument("--project", help="Project code (optional, uses current if not specified)")
+        sample_upload_parser.add_argument("--skip-duplicates", action="store_true", default=True,
+                                         help="Skip samples with duplicate codes (default: True)")
+        sample_upload_parser.add_argument("--fail-on-duplicates", action="store_true", 
+                                         help="Fail when encountering duplicate sample codes")
+
+        # Preview CSV file
+        sample_preview_parser = subparsers.add_parser("sample-preview", help="Preview CSV file structure")
+        sample_preview_parser.add_argument("csv_path", help="Path to CSV file to preview")
+        sample_preview_parser.add_argument("--rows", type=int, default=5, help="Number of rows to preview (default: 5)")
+
+        # Export samples to CSV
+        sample_export_parser = subparsers.add_parser("sample-export", help="Export samples to CSV file")
+        sample_export_parser.add_argument("output_path", help="Path where to save the CSV file")
+        sample_export_parser.add_argument("--project", help="Project code (optional, uses current if not specified)")
     
     def handle_command(self, args, db_path: str) -> bool:
         """Handle sample commands."""
@@ -59,7 +78,92 @@ class SampleCommandHandler(BaseCommandHandler):
             return self._update_sample(db_path, args)
         elif args.command == "sample-delete":
             return self._delete_sample(db_path, args.code, args.project)
+        elif args.command == "sample-upload":
+            return self._upload_samples(db_path, args)
+        elif args.command == "sample-preview":
+            return self._preview_csv(db_path, args.csv_path, args.rows)
+        elif args.command == "sample-export":
+            return self._export_samples(db_path, args)
         return False
+    
+    def _upload_samples(self, db_path: str, args) -> bool:
+        """Upload samples from CSV file."""
+        from ..samples import current_project_manager
+        from ..sample_csv_processor import SampleCSVProcessor
+        
+        csv_processor = SampleCSVProcessor(db_path)
+        project_id = self.get_project_id_from_args(args, current_project_manager, db_path)
+        
+        if project_id is None:
+            return False
+        
+        # Determine skip_duplicates setting
+        skip_duplicates = not args.fail_on_duplicates if hasattr(args, 'fail_on_duplicates') and args.fail_on_duplicates else args.skip_duplicates
+        
+        # Process CSV upload
+        success, message, samples = csv_processor.process_csv_upload(
+            csv_path=args.csv_path,
+            project_id=project_id,
+            skip_duplicates=skip_duplicates
+        )
+        
+        print(message)
+        return success
+    
+    def _preview_csv(self, db_path: str, csv_path: str, num_rows: int) -> bool:
+        """Preview CSV file structure."""
+        from ..sample_csv_processor import SampleCSVProcessor
+        
+        csv_processor = SampleCSVProcessor(db_path)
+        
+        success, message, preview_data = csv_processor.preview_csv(csv_path, num_rows)
+        
+        if not success:
+            print(f"❌ {message}")
+            return False
+        
+        print(f"📄 Sample CSV Preview: {csv_path}\n")
+        print(f"📊 Structure:")
+        print(f"   - Total rows: {preview_data['total_rows']}")
+        print(f"   - Total columns: {preview_data['total_columns']}")
+        print(f"   - Columns: {', '.join(preview_data['columns'])}")
+        
+        # Show diagnosis distribution
+        if preview_data['dx_distribution']:
+            print(f"\n🏥 Diagnosis distribution:")
+            for dx_value, count in preview_data['dx_distribution'].items():
+                print(f"   - {dx_value}: {count} samples")
+        
+        print(f"\n📋 First {num_rows} rows:")
+        for i, row in enumerate(preview_data['preview_rows'], 1):
+            row_display = {k: v for k, v in list(row.items())[:4]}  # Show first 4 columns
+            if len(row) > 4:
+                row_display['...'] = f"and {len(row) - 4} more columns"
+            print(f"   Row {i}: {row_display}")
+        
+        if any(count > 0 for count in preview_data['missing_values'].values()):
+            print(f"\n⚠️  Missing values:")
+            for col, count in preview_data['missing_values'].items():
+                if count > 0:
+                    print(f"   - {col}: {count} missing")
+        
+        return True
+    
+    def _export_samples(self, db_path: str, args) -> bool:
+        """Export samples to CSV file."""
+        from ..samples import current_project_manager
+        from ..sample_csv_processor import SampleCSVProcessor
+        
+        csv_processor = SampleCSVProcessor(db_path)
+        project_id = self.get_project_id_from_args(args, current_project_manager, db_path)
+        
+        if project_id is None:
+            return False
+        
+        success, message = csv_processor.export_samples_to_csv(project_id, args.output_path)
+        
+        print(message)
+        return success
     
     def _list_samples(self, db_path: str, project_code: str = None) -> bool:
         """List samples for current or specified project."""
