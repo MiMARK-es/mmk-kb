@@ -1,222 +1,95 @@
 # MMK Knowledge Base
 
-A Python-based knowledge management system for storing and managing projects with SQLite database backend.
+A comprehensive Python-based biomarker data management system for storing, managing, and analyzing experimental data with a focus on biomarker research workflows.
 
-## Features
+## 🎯 Overview
 
-- **Project Management**: CRUD operations for projects with unique codes
-- **SQLite Database**: Lightweight, file-based database storage
-- **Environment Management**: Support for development, staging, testing, and production databases
-- **Database Utilities**: Backup, restore, cleanup, and management tools
-- **Command Line Interface**: Full-featured CLI for all operations
-- **Full Test Coverage**: Comprehensive pytest test suite
-- **Clean Architecture**: Well-structured codebase following Python best practices
+MMK-KB provides:
+- **Project-based organization** of research data
+- **Sample management** with clinical metadata  
+- **Biomarker experiment tracking** with versioning
+- **CSV-based data import/export** workflows
+- **Multi-environment database support** (development, staging, testing, production)
+- **Full command-line interface** for all operations
+- **Programmatic API** for integration with analysis pipelines
 
-## Project Structure
+## 🚀 Quick Start
 
-```
-mmk-kb/
-├── src/mmkkb/           # Main package
-│   ├── __init__.py
-│   ├── projects.py      # Project model and database operations
-│   ├── config.py        # Environment configuration
-│   ├── db_utils.py      # Database utilities
-│   └── cli.py           # Command line interface
-├── tests/               # Test suite
-│   └── test_projects.py
-├── requirements.txt     # Python dependencies
-├── README.md           # This file
-└── .gitignore          # Git ignore rules
-```
-
-## Project Model
-
-Each project contains:
-- **code**: Unique identifier (user-defined string)
-- **name**: Project name
-- **description**: Project description
-- **creator**: Project creator name
-- **created_at**: Automatic timestamp
-- **updated_at**: Automatic timestamp
-
-## Setup
-
-### Prerequisites
-- Python 3.12
-- pip
-
-### Installation
-
-1. Clone the repository:
 ```bash
+# Install
 git clone <repository-url>
 cd mmk-kb
-```
-
-2. Create and activate virtual environment:
-```bash
 python3.12 -m venv venv
-source venv/bin/activate  # On Linux/Mac
-# or
-venv\Scripts\activate     # On Windows
-```
-
-3. Install dependencies:
-```bash
+source venv/bin/activate
 pip install -r requirements.txt
-```
-
-4. Install the package in development mode:
-```bash
 pip install -e .
+
+# Basic usage
+mmk-kb create "PROJ001" "My Study" "Description" "Creator"
+mmk-kb use "PROJ001"
+mmk-kb sample-upload samples.csv
+mmk-kb experiment-upload data.csv "Experiment Name" "Description"
 ```
 
-## Usage
+## 📚 Documentation
 
-### Command Line Interface
+| Topic | Description |
+|-------|-------------|
+| [Installation & Setup](docs/INSTALLATION.md) | Complete installation guide and environment setup |
+| [Architecture & Implementation](docs/ARCHITECTURE.md) | System design, database schema, and implementation details |
+| [Project Management](docs/PROJECT_MANAGEMENT.md) | Creating and managing research projects |
+| [Sample Management](docs/SAMPLE_MANAGEMENT.md) | Working with clinical samples and metadata |
+| [Sample CSV Upload](docs/SAMPLE_CSV_UPLOAD.md) | Bulk sample data upload via CSV |
+| [Experiment Management](docs/EXPERIMENT_MANAGEMENT.md) | Managing biomarker experiments and measurements |
+| [CLI Reference](docs/CLI_REFERENCE.md) | Complete command-line interface documentation |
+| [API Reference](docs/API_REFERENCE.md) | Programmatic usage and Python API |
+| [Data Workflows](docs/WORKFLOWS.md) | Common research workflows and examples |
+| [Environment Management](docs/ENVIRONMENTS.md) | Database environments and deployment |
 
-The CLI provides comprehensive project and database management capabilities:
+## 🔧 Key Features
+
+- **SQLite backend** with foreign key constraints and ACID compliance
+- **Modular CLI system** with specialized command handlers
+- **CSV processors** for bulk data import/export with validation
+- **Biomarker versioning** for tracking different assay implementations
+- **Environment isolation** for development, staging, and production
+- **Comprehensive backup/restore** utilities
+
+## 📊 Example Workflow
 
 ```bash
-# Show all available commands
-mmk-kb --help
+# 1. Create and use project
+mmk-kb create "CANCER_2024" "Cancer Study" "Multi-center analysis" "Dr. Research"
+mmk-kb use "CANCER_2024"
 
-# Project operations
-mmk-kb list                                    # List all projects
-mmk-kb create "PRJ001" "My Project" "Description" "Creator"  # Create project
-mmk-kb show "PRJ001"                          # Show project details
-mmk-kb delete "PRJ001"                        # Delete project
+# 2. Upload sample data
+mmk-kb sample-upload clinical_data.csv
 
-# Environment management
-mmk-kb env                                     # Show environment status
-mmk-kb setenv staging                          # Set current environment
-mmk-kb --env production list                   # Use specific environment for command
+# 3. Upload experiment data
+mmk-kb experiment-upload cytokine_panel.csv "Cytokine Analysis" "Initial screening"
 
-# Database management
-mmk-kb backup                                  # Backup current environment database
-mmk-kb backup --env staging --dir backups     # Backup specific environment
-mmk-kb restore backup_file.db                 # Restore from backup
-mmk-kb clean --env staging                     # Clean staging database
-mmk-kb clean-tests                             # Clean all test databases
-mmk-kb copy development staging                # Copy between environments
-mmk-kb vacuum                                  # Optimize database
+# 4. Review results
+mmk-kb experiments
+mmk-kb biomarkers
+mmk-kb measurements-summary
 ```
 
-### Programmatic Usage
-
-```python
-from mmkkb.projects import Project, ProjectDatabase
-from mmkkb.config import Environment, set_environment
-
-# Set environment (optional - defaults to development)
-set_environment(Environment.STAGING)
-
-# Initialize database (uses current environment)
-db = ProjectDatabase()
-
-# Create a project
-project = Project(
-    code="PRJ001",
-    name="My First Project",
-    description="This is a test project",
-    creator="John Doe"
-)
-created_project = db.create_project(project)
-
-# Read projects
-project = db.get_project_by_code("PRJ001")
-all_projects = db.list_projects()
-
-# Update project
-project.description = "Updated description"
-updated_project = db.update_project(project)
-
-# Delete project
-success = db.delete_project("PRJ001")
-```
-
-### Environment Management
-
-The system supports multiple database environments:
-
-- **development**: Default environment for local development (`mmk_kb.db`)
-- **staging**: For testing and examples (`mmk_kb_staging.db`)
-- **testing**: For automated tests (`test_mmk_kb.db`)
-- **production**: For production use (`mmk_kb_production.db`)
-
-Set environment via:
-```bash
-export MMK_KB_ENV=staging  # Environment variable
-mmk-kb setenv staging      # CLI command
-```
-
-### Database Utilities
-
-```python
-from mmkkb.db_utils import DatabaseUtils
-from mmkkb.config import Environment
-
-# Backup operations
-backup_path = DatabaseUtils.backup_database(Environment.STAGING)
-DatabaseUtils.restore_database(backup_path, Environment.DEVELOPMENT)
-
-# Cleanup operations
-DatabaseUtils.clean_database(Environment.STAGING)
-DatabaseUtils.clean_all_test_databases()
-
-# Database management
-DatabaseUtils.copy_database(Environment.DEVELOPMENT, Environment.STAGING)
-DatabaseUtils.vacuum_database(Environment.DEVELOPMENT)
-
-# Status information
-status = DatabaseUtils.list_database_status()
-```
-
-## Testing
-
-Run the test suite:
+## 🧪 Testing
 
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src/mmkkb
-
-# Run specific test file
-pytest tests/test_projects.py
-
-# Run with verbose output
-pytest -v
+pytest                    # Run all tests
+pytest --cov=src/mmkkb   # Run with coverage
 ```
 
-## Development
-
-### Code Formatting
-
-The project uses black and isort for code formatting:
-
-```bash
-# Format code
-black src/ tests/
-
-# Sort imports
-isort src/ tests/
-```
-
-### Database
-
-The SQLite database file (`mmk_kb.db`) will be created automatically in the project root when you first use the database operations.
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
+3. Make changes with tests
+4. Submit a pull request
 
-## License
+See [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
-[Add your license here]
+## 📄 License
+
+[Add your license information here]
