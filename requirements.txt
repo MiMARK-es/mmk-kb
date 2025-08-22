@@ -1,0 +1,17 @@
+# Core dependencies (sqlite3 and dataclasses are built-in)
+typing-extensions>=4.0.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Jupyter for notebooks
+jupyter>=1.0.0
+ipython>=8.0.0
+
+# Data handling
+pandas>=2.0.0
+
+# Optional: for better development experience
+black>=23.0.0
+isort>=5.12.0
