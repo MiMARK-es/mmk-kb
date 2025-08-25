@@ -11,6 +11,7 @@ from .cli.project_commands import ProjectCommandHandler
 from .cli.sample_commands import SampleCommandHandler
 from .cli.environment_commands import EnvironmentCommandHandler, DatabaseCommandHandler
 from .cli.experiment_commands import ExperimentCommandHandler
+from .cli.roc_commands import ROCAnalysisCommandHandler
 
 
 class CLIManager:
@@ -22,6 +23,7 @@ class CLIManager:
             ProjectCommandHandler(),
             SampleCommandHandler(), 
             ExperimentCommandHandler(),
+            ROCAnalysisCommandHandler(),
             EnvironmentCommandHandler(),
             DatabaseCommandHandler(),
         ]
@@ -71,6 +73,9 @@ class CLIManager:
                         command_handled = True
                     # Check ExperimentCommandHandler for experiment commands
                     elif isinstance(handler, ExperimentCommandHandler) and args.command in ['experiments', 'experiment-upload', 'csv-preview', 'experiment-show', 'biomarkers', 'biomarker-versions', 'biomarker-analysis', 'measurements-summary']:
+                        command_handled = True
+                    # Check ROCAnalysisCommandHandler for ROC commands
+                    elif isinstance(handler, ROCAnalysisCommandHandler) and args.command in ['roc-run', 'roc-list', 'roc-show', 'roc-report', 'roc-model', 'roc-curve']:
                         command_handled = True
                     # Check EnvironmentCommandHandler for environment commands
                     elif isinstance(handler, EnvironmentCommandHandler) and args.command in ['env', 'setenv']:

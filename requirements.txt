@@ -1,6 +1,10 @@
 # Core dependencies (sqlite3 and dataclasses are built-in)
 typing-extensions>=4.0.0
 
+# Machine learning and scientific computing
+numpy>=1.21.0
+scikit-learn>=1.0.0
+
 # Development and testing
 pytest>=7.0.0
 pytest-cov>=4.0.0

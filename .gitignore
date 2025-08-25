@@ -175,3 +175,8 @@ backups/
 
 # Jupyter notebook outputs
 *.ipynb
+
+# ROC analysis temporary outputs
+*_roc_results.csv
+*_curve.csv
+realistic_roc_results.csv
