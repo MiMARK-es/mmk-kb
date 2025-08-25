@@ -5,15 +5,12 @@ Modular Command Line Interface for MMK Knowledge Base
 import argparse
 import sys
 from typing import List
-
 from .config import Environment, get_database_path, set_environment
 from .cli.project_commands import ProjectCommandHandler
 from .cli.sample_commands import SampleCommandHandler
 from .cli.environment_commands import EnvironmentCommandHandler, DatabaseCommandHandler
 from .cli.experiment_commands import ExperimentCommandHandler
-from .cli.roc_commands import ROCAnalysisCommandHandler
-from .cli.roc_normalized_commands import ROCNormalizedAnalysisCommandHandler
-
+from .cli.analysis_commands import AnalysisCommandHandler
 
 class CLIManager:
     """Main CLI manager that coordinates all command handlers."""
@@ -24,8 +21,7 @@ class CLIManager:
             ProjectCommandHandler(),
             SampleCommandHandler(), 
             ExperimentCommandHandler(),
-            ROCAnalysisCommandHandler(),
-            ROCNormalizedAnalysisCommandHandler(),
+            AnalysisCommandHandler(),  # New grouped analysis commands
             EnvironmentCommandHandler(),
             DatabaseCommandHandler(),
         ]
@@ -41,7 +37,6 @@ class CLIManager:
             choices=[e.value for e in Environment],
             help="Set environment for this command",
         )
-
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
         
         # Let each handler add its commands
@@ -55,10 +50,9 @@ class CLIManager:
         # Set temporary environment if specified
         if args.env:
             set_environment(Environment(args.env))
-
         # Determine database path
         db_path = args.db or get_database_path()
-
+        
         # Find the handler that can process this command
         for handler in self.handlers:
             try:
@@ -76,11 +70,8 @@ class CLIManager:
                     # Check ExperimentCommandHandler for experiment commands
                     elif isinstance(handler, ExperimentCommandHandler) and args.command in ['experiments', 'experiment-upload', 'csv-preview', 'experiment-show', 'biomarkers', 'biomarker-versions', 'biomarker-analysis', 'measurements-summary']:
                         command_handled = True
-                    # Check ROCAnalysisCommandHandler for ROC commands
-                    elif isinstance(handler, ROCAnalysisCommandHandler) and args.command in ['roc-run', 'roc-list', 'roc-show', 'roc-report', 'roc-model', 'roc-curve']:
-                        command_handled = True
-                    # Check ROCNormalizedAnalysisCommandHandler for ROC Normalized commands
-                    elif isinstance(handler, ROCNormalizedAnalysisCommandHandler) and args.command in ['roc-norm-run', 'roc-norm-list', 'roc-norm-show', 'roc-norm-report', 'roc-norm-model', 'roc-norm-curve']:
+                    # Check AnalysisCommandHandler for analysis commands
+                    elif isinstance(handler, AnalysisCommandHandler) and args.command == 'analysis':
                         command_handled = True
                     # Check EnvironmentCommandHandler for environment commands
                     elif isinstance(handler, EnvironmentCommandHandler) and args.command in ['env', 'setenv']:
@@ -99,17 +90,16 @@ class CLIManager:
         print(f"❌ Unknown command: {args.command}")
         return False
 
-
 def main():
     """Main CLI entry point."""
     cli_manager = CLIManager()
     parser = cli_manager.create_parser()
     args = parser.parse_args()
-
+    
     if not args.command:
         parser.print_help()
         sys.exit(1)
-
+    
     try:
         success = cli_manager.execute_command(args)
         if not success:
@@ -117,7 +107,6 @@ def main():
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

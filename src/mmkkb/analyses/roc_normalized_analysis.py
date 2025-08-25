@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from ..config import get_database_path
 from ..experiments import ExperimentDatabase
 from ..samples import SampleDatabase
+from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults
 
 @dataclass
 class ROCNormalizedAnalysis:
@@ -27,6 +28,7 @@ class ROCNormalizedAnalysis:
     normalizer_biomarker_version_id: int  # The biomarker used for normalization
     prevalence: float  # Expected prevalence for PPV/NPV calculations
     max_combination_size: int  # Maximum number of biomarkers per model
+    cross_validation_config: Optional[CrossValidationConfig] = None
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 
@@ -38,6 +40,7 @@ class ROCNormalizedModel:
     normalizer_biomarker_version_id: int  # The normalizer biomarker
     auc: float
     coefficients: Dict[str, float]  # Model coefficients including intercept
+    cross_validation_results: Optional[CrossValidationResults] = None
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 
@@ -76,7 +79,7 @@ class ROCNormalizedAnalysisDatabase:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("PRAGMA foreign_keys = ON")
             
-            # ROC normalized analyses table
+            # ROC normalized analyses table - add cross-validation configuration
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS roc_normalized_analyses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,13 +89,14 @@ class ROCNormalizedAnalysisDatabase:
                     normalizer_biomarker_version_id INTEGER NOT NULL,
                     prevalence REAL NOT NULL CHECK (prevalence > 0 AND prevalence < 1),
                     max_combination_size INTEGER NOT NULL CHECK (max_combination_size > 0),
+                    cross_validation_config TEXT,  -- JSON config for cross-validation
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (experiment_id) REFERENCES experiments (id) ON DELETE CASCADE,
                     FOREIGN KEY (normalizer_biomarker_version_id) REFERENCES biomarker_versions (id) ON DELETE CASCADE
                 )
             """)
             
-            # ROC normalized models table
+            # ROC normalized models table - add cross-validation results
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS roc_normalized_models (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +105,7 @@ class ROCNormalizedAnalysisDatabase:
                     normalizer_biomarker_version_id INTEGER NOT NULL,
                     auc REAL NOT NULL,
                     coefficients TEXT NOT NULL,  -- JSON object with coefficients
+                    cross_validation_results TEXT,  -- JSON object with CV results
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (analysis_id) REFERENCES roc_normalized_analyses (id) ON DELETE CASCADE,
                     FOREIGN KEY (normalizer_biomarker_version_id) REFERENCES biomarker_versions (id) ON DELETE CASCADE
@@ -155,10 +160,10 @@ class ROCNormalizedAnalysisDatabase:
         """Create a new ROC Normalized analysis."""
         with self._get_connection() as conn:
             cursor = conn.execute("""
-                INSERT INTO roc_normalized_analyses (name, description, experiment_id, normalizer_biomarker_version_id, prevalence, max_combination_size)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO roc_normalized_analyses (name, description, experiment_id, normalizer_biomarker_version_id, prevalence, max_combination_size, cross_validation_config)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (analysis.name, analysis.description, analysis.experiment_id, 
-                  analysis.normalizer_biomarker_version_id, analysis.prevalence, analysis.max_combination_size))
+                  analysis.normalizer_biomarker_version_id, analysis.prevalence, analysis.max_combination_size, json.dumps(asdict(analysis.cross_validation_config)) if analysis.cross_validation_config else None))
             
             analysis.id = cursor.lastrowid
             
@@ -189,6 +194,7 @@ class ROCNormalizedAnalysisDatabase:
                     normalizer_biomarker_version_id=row["normalizer_biomarker_version_id"],
                     prevalence=row["prevalence"],
                     max_combination_size=row["max_combination_size"],
+                    cross_validation_config=json.loads(row["cross_validation_config"]) if row["cross_validation_config"] else None,
                     created_at=datetime.fromisoformat(row["created_at"])
                 )
         return None
@@ -215,6 +221,7 @@ class ROCNormalizedAnalysisDatabase:
                     normalizer_biomarker_version_id=row["normalizer_biomarker_version_id"],
                     prevalence=row["prevalence"],
                     max_combination_size=row["max_combination_size"],
+                    cross_validation_config=json.loads(row["cross_validation_config"]) if row["cross_validation_config"] else None,
                     created_at=datetime.fromisoformat(row["created_at"])
                 ))
         return analyses
@@ -224,10 +231,10 @@ class ROCNormalizedAnalysisDatabase:
         """Create a new ROC Normalized model."""
         with self._get_connection() as conn:
             cursor = conn.execute("""
-                INSERT INTO roc_normalized_models (analysis_id, biomarker_combination, normalizer_biomarker_version_id, auc, coefficients)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO roc_normalized_models (analysis_id, biomarker_combination, normalizer_biomarker_version_id, auc, coefficients, cross_validation_results)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (model.analysis_id, json.dumps(model.biomarker_combination), 
-                  model.normalizer_biomarker_version_id, model.auc, json.dumps(model.coefficients)))
+                  model.normalizer_biomarker_version_id, model.auc, json.dumps(model.coefficients), json.dumps(asdict(model.cross_validation_results)) if model.cross_validation_results else None))
             
             model.id = cursor.lastrowid
             
@@ -259,6 +266,7 @@ class ROCNormalizedAnalysisDatabase:
                     normalizer_biomarker_version_id=row["normalizer_biomarker_version_id"],
                     auc=row["auc"],
                     coefficients=json.loads(row["coefficients"]),
+                    cross_validation_results=json.loads(row["cross_validation_results"]) if row["cross_validation_results"] else None,
                     created_at=datetime.fromisoformat(row["created_at"])
                 ))
         return models
@@ -352,14 +360,15 @@ class ROCNormalizedAnalysisDatabase:
                 ))
         return points
 
-class ROCNormalizedAnalyzer:
+class ROCNormalizedAnalyzer(BaseAnalyzer):
     """Main class for performing ROC Normalized analysis on biomarker data."""
     
     def __init__(self, db_path: Optional[str] = None):
+        super().__init__(db_path)
         self.db_path = db_path or get_database_path()
-        self.roc_norm_db = ROCNormalizedAnalysisDatabase(db_path)
-        self.exp_db = ExperimentDatabase(db_path)
-        self.sample_db = SampleDatabase(db_path)
+        self.roc_norm_db = ROCNormalizedAnalysisDatabase(self.db_path)
+        self.exp_db = ExperimentDatabase(self.db_path)
+        self.sample_db = SampleDatabase(self.db_path)
     
     def run_roc_normalized_analysis(self, analysis: ROCNormalizedAnalysis) -> Dict[str, Any]:
         """
@@ -408,7 +417,8 @@ class ROCNormalizedAnalyzer:
                     combination,
                     analysis.normalizer_biomarker_version_id,
                     experiment_data,
-                    analysis.prevalence
+                    analysis.prevalence,
+                    analysis.cross_validation_config
                 )
                 results['successful_models'].append(model_result)
                 results['models_created'] += 1
@@ -520,7 +530,8 @@ class ROCNormalizedAnalyzer:
                                      biomarker_combination: List[int],
                                      normalizer_bv_id: int,
                                      experiment_data: Dict[str, Any],
-                                     prevalence: float) -> Dict[str, Any]:
+                                     prevalence: float,
+                                     cv_config: Optional[CrossValidationConfig] = None) -> Dict[str, Any]:
         """Analyze a specific normalized biomarker combination."""
         df = experiment_data['dataframe'].copy()
         
@@ -528,6 +539,11 @@ class ROCNormalizedAnalyzer:
         feature_cols = [f'biomarker_{bv_id}' for bv_id in biomarker_combination]
         X = df[feature_cols].values
         y = df['dx'].values
+        
+        # Perform cross-validation if configured
+        cv_results = None
+        if cv_config:
+            cv_results = self._perform_cross_validation(X, y, cv_config)
         
         # Standardize features
         scaler = StandardScaler()
@@ -560,7 +576,8 @@ class ROCNormalizedAnalyzer:
             biomarker_combination=biomarker_combination,
             normalizer_biomarker_version_id=normalizer_bv_id,
             auc=roc_auc,
-            coefficients=coefficients
+            coefficients=coefficients,
+            cross_validation_results=cv_results
         )
         created_model = self.roc_norm_db.create_roc_normalized_model(roc_model)
         
@@ -626,6 +643,7 @@ class ROCNormalizedAnalyzer:
             'biomarker_combination': biomarker_combination,
             'normalizer_biomarker_version_id': normalizer_bv_id,
             'auc': roc_auc,
+            'cross_validation_results': cv_results,
             'metrics': metrics_results,
             'roc_points_count': len(roc_points)
         }
