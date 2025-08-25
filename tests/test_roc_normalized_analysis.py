@@ -6,11 +6,11 @@ import tempfile
 import os
 import pandas as pd
 from datetime import datetime
-
 from src.mmkkb.analyses.roc_normalized_analysis import (
     ROCNormalizedAnalysisDatabase, ROCNormalizedAnalyzer, ROCNormalizedAnalysis,
-    ROCNormalizedModel, ROCNormalizedMetrics, ROCNormalizedCurvePoint
+    ROCNormalizedModel, ROCNormalizedMetrics
 )
+from src.mmkkb.analyses.base_analysis import ROCCurvePoint
 from src.mmkkb.projects import ProjectDatabase, Project
 from src.mmkkb.samples import SampleDatabase, Sample
 from src.mmkkb.experiments import ExperimentDatabase, Experiment, Biomarker, BiomarkerVersion, Measurement

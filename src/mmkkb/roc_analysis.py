@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from .config import get_database_path
 from .experiments import ExperimentDatabase
 from .samples import SampleDatabase
+from .analyses.base_analysis import ROCCurvePoint
 
 
 @dataclass
@@ -52,17 +53,6 @@ class ROCMetrics:
     specificity: float
     npv: float
     ppv: float
-    created_at: Optional[datetime] = None
-    id: Optional[int] = None
-
-
-@dataclass
-class ROCCurvePoint:
-    """Individual point on ROC curve."""
-    model_id: int
-    fpr: float  # False Positive Rate
-    tpr: float  # True Positive Rate
-    threshold: float
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 

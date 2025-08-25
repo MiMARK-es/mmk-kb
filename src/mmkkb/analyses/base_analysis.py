@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import StandardScaler
 from dataclasses import dataclass
+from datetime import datetime
 from abc import ABC, abstractmethod
 
 
@@ -31,6 +32,17 @@ class CrossValidationResults:
     bootstrap_auc_mean: Optional[float] = None
     bootstrap_auc_std: Optional[float] = None
     bootstrap_aucs: Optional[List[float]] = None
+
+
+@dataclass
+class ROCCurvePoint:
+    """Base class for ROC curve points - shared across all analysis types."""
+    model_id: int
+    fpr: float  # False Positive Rate
+    tpr: float  # True Positive Rate
+    threshold: float
+    created_at: Optional[datetime] = None
+    id: Optional[int] = None
 
 
 class BaseAnalyzer(ABC):

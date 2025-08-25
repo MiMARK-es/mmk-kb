@@ -10,9 +10,9 @@ from datetime import datetime
 
 from src.mmkkb.analyses.roc_ratios_analysis import (
     ROCRatiosAnalyzer, ROCRatiosAnalysis, ROCRatiosAnalysisDatabase,
-    ROCRatiosModel, ROCRatiosMetrics, ROCRatiosCurvePoint
+    ROCRatiosModel, ROCRatiosMetrics
 )
-from src.mmkkb.analyses.base_analysis import CrossValidationConfig
+from src.mmkkb.analyses.base_analysis import CrossValidationConfig, ROCCurvePoint
 from src.mmkkb.projects import ProjectDatabase, Project
 from src.mmkkb.samples import SampleDatabase, Sample
 from src.mmkkb.experiments import ExperimentDatabase, Experiment, Biomarker, BiomarkerVersion, Measurement
@@ -252,13 +252,13 @@ class TestROCRatiosAnalysisDatabase:
         
         # Create curve points
         points = [
-            ROCRatiosCurvePoint(
+            ROCCurvePoint(
                 model_id=created_model.id,
                 fpr=0.0,
                 tpr=0.0,
                 threshold=1.0
             ),
-            ROCRatiosCurvePoint(
+            ROCCurvePoint(
                 model_id=created_model.id,
                 fpr=0.2,
                 tpr=0.8,

@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from ..config import get_database_path
 from ..experiments import ExperimentDatabase
 from ..samples import SampleDatabase
-from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults
+from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults, ROCCurvePoint
 
 @dataclass
 class ROCNormalizedAnalysis:
@@ -54,16 +54,6 @@ class ROCNormalizedMetrics:
     specificity: float
     npv: float
     ppv: float
-    created_at: Optional[datetime] = None
-    id: Optional[int] = None
-
-@dataclass
-class ROCNormalizedCurvePoint:
-    """Individual point on ROC Normalized curve."""
-    model_id: int
-    fpr: float  # False Positive Rate
-    tpr: float  # True Positive Rate
-    threshold: float
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 
@@ -318,7 +308,7 @@ class ROCNormalizedAnalysisDatabase:
         return metrics
     
     # ROC Normalized Curve Points operations
-    def create_roc_normalized_curve_points(self, points: List[ROCNormalizedCurvePoint]) -> List[ROCNormalizedCurvePoint]:
+    def create_roc_normalized_curve_points(self, points: List[ROCCurvePoint]) -> List[ROCCurvePoint]:
         """Create multiple ROC Normalized curve points."""
         with self._get_connection() as conn:
             for point in points:
@@ -339,7 +329,7 @@ class ROCNormalizedAnalysisDatabase:
             conn.commit()
         return points
     
-    def get_roc_normalized_curve_points_by_model(self, model_id: int) -> List[ROCNormalizedCurvePoint]:
+    def get_roc_normalized_curve_points_by_model(self, model_id: int) -> List[ROCCurvePoint]:
         """Get all ROC Normalized curve points for a model."""
         points = []
         with self._get_connection() as conn:
@@ -350,7 +340,7 @@ class ROCNormalizedAnalysisDatabase:
             ).fetchall()
             
             for row in rows:
-                points.append(ROCNormalizedCurvePoint(
+                points.append(ROCCurvePoint(
                     id=row["id"],
                     model_id=row["model_id"],
                     fpr=row["fpr"],
@@ -628,7 +618,7 @@ class ROCNormalizedAnalyzer(BaseAnalyzer):
         # Store ROC curve points
         roc_points = []
         for i in range(len(fpr)):
-            point = ROCNormalizedCurvePoint(
+            point = ROCCurvePoint(
                 model_id=created_model.id,
                 fpr=float(fpr[i]),
                 tpr=float(tpr[i]),
