@@ -10,9 +10,9 @@ from datetime import datetime
 
 from src.mmkkb.analyses.roc_ratios_analysis import (
     ROCRatiosAnalyzer, ROCRatiosAnalysis, ROCRatiosAnalysisDatabase,
-    ROCRatiosModel, ROCRatiosMetrics
+    ROCRatiosModel
 )
-from src.mmkkb.analyses.base_analysis import CrossValidationConfig, ROCCurvePoint
+from src.mmkkb.analyses.base_analysis import CrossValidationConfig, ROCCurvePoint, ROCMetrics
 from src.mmkkb.projects import ProjectDatabase, Project
 from src.mmkkb.samples import SampleDatabase, Sample
 from src.mmkkb.experiments import ExperimentDatabase, Experiment, Biomarker, BiomarkerVersion, Measurement
@@ -211,7 +211,7 @@ class TestROCRatiosAnalysisDatabase:
         created_model = roc_ratios_db.create_roc_ratios_model(model)
         
         # Create metrics
-        metrics = ROCRatiosMetrics(
+        metrics = ROCMetrics(
             model_id=created_model.id,
             threshold_type='se_97',
             threshold=0.5,

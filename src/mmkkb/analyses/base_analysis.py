@@ -44,6 +44,19 @@ class ROCCurvePoint:
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 
+@dataclass 
+class ROCMetrics:
+    """ROC Metrics for specific sensitivity thresholds - shared across all ROC analysis types."""
+    model_id: int
+    threshold_type: str  # 'se_97', 'se_95', 'max_sum'
+    threshold: float
+    sensitivity: float
+    specificity: float
+    npv: float
+    ppv: float
+    created_at: Optional[datetime] = None
+    id: Optional[int] = None
+
 
 class BaseAnalyzer(ABC):
     """Base class for all analysis types with common functionality."""

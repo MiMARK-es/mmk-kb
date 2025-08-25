@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from ..config import get_database_path
 from ..experiments import ExperimentDatabase
 from ..samples import SampleDatabase
-from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults, ROCCurvePoint
+from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults, ROCCurvePoint, ROCMetrics
 
 
 @dataclass
@@ -41,20 +41,6 @@ class ROCRatiosModel:
     auc: float
     coefficients: Dict[str, float]  # Model coefficients including intercept
     cross_validation_results: Optional[CrossValidationResults] = None
-    created_at: Optional[datetime] = None
-    id: Optional[int] = None
-
-
-@dataclass
-class ROCRatiosMetrics:
-    """ROC Ratios Metrics for specific sensitivity thresholds."""
-    model_id: int
-    threshold_type: str  # 'se_97', 'se_95', 'max_sum'
-    threshold: float
-    sensitivity: float
-    specificity: float
-    npv: float
-    ppv: float
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 
@@ -275,7 +261,7 @@ class ROCRatiosAnalysisDatabase:
                 ))
         return models
     
-    def create_roc_ratios_metrics(self, metrics: ROCRatiosMetrics) -> ROCRatiosMetrics:
+    def create_roc_ratios_metrics(self, metrics: ROCMetrics) -> ROCMetrics:
         """Create ROC Ratios metrics."""
         with self._get_connection() as conn:
             cursor = conn.execute("""
@@ -296,7 +282,7 @@ class ROCRatiosAnalysisDatabase:
             conn.commit()
         return metrics
     
-    def get_roc_ratios_metrics_by_model(self, model_id: int) -> List[ROCRatiosMetrics]:
+    def get_roc_ratios_metrics_by_model(self, model_id: int) -> List[ROCMetrics]:
         """Get all metrics for a model."""
         metrics = []
         with self._get_connection() as conn:
@@ -307,7 +293,7 @@ class ROCRatiosAnalysisDatabase:
             ).fetchall()
             
             for row in rows:
-                metrics.append(ROCRatiosMetrics(
+                metrics.append(ROCMetrics(
                     id=row["id"],
                     model_id=row["model_id"],
                     threshold_type=row["threshold_type"],
@@ -385,7 +371,7 @@ class ROCRatiosAnalyzer(BaseAnalyzer):
         """
         # Get experiment data first to validate experiment exists and has data
         experiment_data = self._prepare_experiment_data(analysis.experiment_id)
-        if experiment_data is None:
+        if (experiment_data is None):
             raise ValueError(f"No valid data found for experiment {analysis.experiment_id}")
         
         # Create the analysis record after validation
@@ -601,7 +587,7 @@ class ROCRatiosAnalyzer(BaseAnalyzer):
             target_sensitivity=0.97, prevalence=prevalence
         )
         if se_97_metrics:
-            metrics = ROCRatiosMetrics(
+            metrics = ROCMetrics(
                 model_id=created_model.id,
                 threshold_type='se_97',
                 **se_97_metrics
@@ -615,7 +601,7 @@ class ROCRatiosAnalyzer(BaseAnalyzer):
             target_sensitivity=0.95, prevalence=prevalence
         )
         if se_95_metrics:
-            metrics = ROCRatiosMetrics(
+            metrics = ROCMetrics(
                 model_id=created_model.id,
                 threshold_type='se_95',
                 **se_95_metrics
@@ -628,7 +614,7 @@ class ROCRatiosAnalyzer(BaseAnalyzer):
             y, y_pred_proba, fpr, tpr, thresholds, prevalence
         )
         if max_sum_metrics:
-            metrics = ROCRatiosMetrics(
+            metrics = ROCMetrics(
                 model_id=created_model.id,
                 threshold_type='max_sum',
                 **max_sum_metrics

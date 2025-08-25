@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from .config import get_database_path
 from .experiments import ExperimentDatabase
 from .samples import SampleDatabase
-from .analyses.base_analysis import ROCCurvePoint
+from .analyses.base_analysis import ROCCurvePoint, ROCMetrics
 
 
 @dataclass
@@ -39,20 +39,6 @@ class ROCModel:
     biomarker_combination: List[int]  # List of biomarker_version_ids
     auc: float
     coefficients: Dict[str, float]  # Model coefficients including intercept
-    created_at: Optional[datetime] = None
-    id: Optional[int] = None
-
-
-@dataclass
-class ROCMetrics:
-    """ROC Metrics for specific sensitivity thresholds."""
-    model_id: int
-    threshold_type: str  # 'se_97', 'se_95', 'max_sum'
-    threshold: float
-    sensitivity: float
-    specificity: float
-    npv: float
-    ppv: float
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 

@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from ..config import get_database_path
 from ..experiments import ExperimentDatabase
 from ..samples import SampleDatabase
-from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults, ROCCurvePoint
+from .base_analysis import BaseAnalyzer, CrossValidationConfig, CrossValidationResults, ROCCurvePoint, ROCMetrics
 
 @dataclass
 class ROCAnalysis:
@@ -39,19 +39,6 @@ class ROCModel:
     auc: float
     coefficients: Dict[str, float]  # Model coefficients including intercept
     cross_validation_results: Optional[CrossValidationResults] = None
-    created_at: Optional[datetime] = None
-    id: Optional[int] = None
-
-@dataclass
-class ROCMetrics:
-    """ROC Metrics for specific sensitivity thresholds."""
-    model_id: int
-    threshold_type: str  # 'se_97', 'se_95', 'max_sum'
-    threshold: float
-    sensitivity: float
-    specificity: float
-    npv: float
-    ppv: float
     created_at: Optional[datetime] = None
     id: Optional[int] = None
 
