@@ -12,6 +12,7 @@ from .cli.sample_commands import SampleCommandHandler
 from .cli.environment_commands import EnvironmentCommandHandler, DatabaseCommandHandler
 from .cli.experiment_commands import ExperimentCommandHandler
 from .cli.roc_commands import ROCAnalysisCommandHandler
+from .cli.roc_normalized_commands import ROCNormalizedAnalysisCommandHandler
 
 
 class CLIManager:
@@ -24,6 +25,7 @@ class CLIManager:
             SampleCommandHandler(), 
             ExperimentCommandHandler(),
             ROCAnalysisCommandHandler(),
+            ROCNormalizedAnalysisCommandHandler(),
             EnvironmentCommandHandler(),
             DatabaseCommandHandler(),
         ]
@@ -76,6 +78,9 @@ class CLIManager:
                         command_handled = True
                     # Check ROCAnalysisCommandHandler for ROC commands
                     elif isinstance(handler, ROCAnalysisCommandHandler) and args.command in ['roc-run', 'roc-list', 'roc-show', 'roc-report', 'roc-model', 'roc-curve']:
+                        command_handled = True
+                    # Check ROCNormalizedAnalysisCommandHandler for ROC Normalized commands
+                    elif isinstance(handler, ROCNormalizedAnalysisCommandHandler) and args.command in ['roc-norm-run', 'roc-norm-list', 'roc-norm-show', 'roc-norm-report', 'roc-norm-model', 'roc-norm-curve']:
                         command_handled = True
                     # Check EnvironmentCommandHandler for environment commands
                     elif isinstance(handler, EnvironmentCommandHandler) and args.command in ['env', 'setenv']:

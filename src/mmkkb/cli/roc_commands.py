@@ -3,7 +3,7 @@ ROC analysis commands for the CLI.
 """
 import os
 from .base import BaseCommandHandler
-from ..roc_analysis import ROCAnalysisDatabase, ROCAnalyzer, ROCAnalysis
+from ..analyses.roc_analysis import ROCAnalysisDatabase, ROCAnalyzer, ROCAnalysis
 from ..experiments import ExperimentDatabase
 from ..projects import ProjectDatabase
 
