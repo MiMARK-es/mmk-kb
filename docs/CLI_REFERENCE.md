@@ -7,6 +7,7 @@ MMK-KB provides a comprehensive command-line interface organized into functional
 - **Project Management**: `create`, `list`, `show`, `delete`, `use`, `current`, `clear`
 - **Sample Management**: `samples`, `sample-create`, `sample-show`, `sample-update`, `sample-delete`, `sample-upload`, `sample-preview`, `sample-export`
 - **Experiment Management**: `experiments`, `experiment-upload`, `csv-preview`, `experiment-show`, `biomarkers`, `biomarker-versions`, `biomarker-analysis`, `measurements-summary`
+- **Analysis**: `analysis roc-run`, `analysis roc-list`, `analysis roc-show`, `analysis roc-report`, `analysis roc-norm-run`, `analysis roc-norm-list`, `analysis roc-norm-show`, `analysis roc-norm-report`, `analysis roc-ratios-run`, `analysis roc-ratios-list`, `analysis roc-ratios-show`, `analysis roc-ratios-report`
 - **Environment Management**: `env`, `setenv`
 - **Database Management**: `backup`, `restore`, `clean`, `clean-tests`, `copy`, `vacuum`
 
@@ -238,6 +239,121 @@ mmk-kb measurements-summary
 
 # Summary for specific project
 mmk-kb measurements-summary --project <project_code>
+```
+
+## Analysis Commands
+
+### ROC Ratios Analysis
+
+#### `analysis roc-ratios-run` - Run ROC Ratios Analysis
+```bash
+mmk-kb analysis roc-ratios-run --experiment-id <id> --name <name> --description <desc> --prevalence <value> --max-combination-size <size> [options]
+
+# Basic analysis
+mmk-kb analysis roc-ratios-run \
+  --experiment-id 1 \
+  --name "Inflammation Ratios" \
+  --description "Testing cytokine ratios for sepsis diagnosis" \
+  --prevalence 0.3 \
+  --max-combination-size 2
+
+# With cross-validation
+mmk-kb analysis roc-ratios-run \
+  --experiment-id 1 \
+  --name "CV Ratios Analysis" \
+  --description "Ratios with cross-validation" \
+  --prevalence 0.3 \
+  --max-combination-size 1 \
+  --enable-loo \
+  --enable-bootstrap \
+  --bootstrap-iterations 100
+```
+
+**Parameters:**
+- `--experiment-id`: ID of the experiment to analyze
+- `--name`: Name for the analysis
+- `--description`: Description of the analysis
+- `--prevalence`: Expected disease prevalence (0-1)
+- `--max-combination-size`: Maximum number of ratios per model
+- `--enable-loo`: Enable leave-one-out cross-validation
+- `--enable-bootstrap`: Enable bootstrap cross-validation
+- `--bootstrap-iterations`: Number of bootstrap iterations (default: 100)
+
+#### `analysis roc-ratios-list` - List ROC Ratios Analyses
+```bash
+# List all ROC ratios analyses
+mmk-kb analysis roc-ratios-list
+
+# List analyses for specific experiment
+mmk-kb analysis roc-ratios-list --experiment-id 1
+```
+
+#### `analysis roc-ratios-show` - Show ROC Ratios Analysis Details
+```bash
+# Show basic analysis information
+mmk-kb analysis roc-ratios-show --analysis-id 1
+
+# Include model details
+mmk-kb analysis roc-ratios-show --analysis-id 1 --include-models
+
+# Show top N models only
+mmk-kb analysis roc-ratios-show --analysis-id 1 --include-models --top-models 10
+```
+
+#### `analysis roc-ratios-report` - Generate ROC Ratios Analysis Report
+```bash
+# Generate CSV report
+mmk-kb analysis roc-ratios-report --analysis-id 1 --output results.csv
+
+# Generate Excel report
+mmk-kb analysis roc-ratios-report --analysis-id 1 --format excel --output analysis.xlsx
+
+# Generate report with top models only
+mmk-kb analysis roc-ratios-report --analysis-id 1 --output top_results.csv --top-models 20
+```
+
+### Standard ROC Analysis
+
+#### `analysis roc-run` - Run ROC Analysis
+```bash
+mmk-kb analysis roc-run --experiment-id <id> --name <name> --description <desc> --prevalence <value> --max-combination-size <size> [options]
+```
+
+#### `analysis roc-list` - List ROC Analyses
+```bash
+mmk-kb analysis roc-list [--experiment-id <id>]
+```
+
+#### `analysis roc-show` - Show ROC Analysis Details
+```bash
+mmk-kb analysis roc-show --analysis-id <id> [--include-models]
+```
+
+#### `analysis roc-report` - Generate ROC Analysis Report
+```bash
+mmk-kb analysis roc-report --analysis-id <id> --output <file> [--format <format>]
+```
+
+### Normalized ROC Analysis
+
+#### `analysis roc-norm-run` - Run Normalized ROC Analysis
+```bash
+mmk-kb analysis roc-norm-run --experiment-id <id> --name <name> --description <desc> --prevalence <value> --max-combination-size <size> [options]
+```
+
+#### `analysis roc-norm-list` - List Normalized ROC Analyses
+```bash
+mmk-kb analysis roc-norm-list [--experiment-id <id>]
+```
+
+#### `analysis roc-norm-show` - Show Normalized ROC Analysis Details
+```bash
+mmk-kb analysis roc-norm-show --analysis-id <id> [--include-models]
+```
+
+#### `analysis roc-norm-report` - Generate Normalized ROC Analysis Report
+```bash
+mmk-kb analysis roc-norm-report --analysis-id <id> --output <file> [--format <format>]
 ```
 
 ## Environment Commands
